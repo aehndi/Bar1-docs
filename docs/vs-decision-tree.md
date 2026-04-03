@@ -38,22 +38,28 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Week 1] --> B{Did we win Week 1?}
-        B -->|Yes| C[Week 2 = Eco Week]
-            B -->|No| D[Week 2 = Re-scout the next opponent]
+    A[Week 1] --> B{Week 1 Result?}
+    B -->|Win| C[Week 2 = Mandatory Eco<br/>Stack RSS Chests only]
+    B -->|Loss| D[Week 2 = Scout Opponent]
 
-                C --> E{Is Week 3 winnable?}
-                    D --> E
+    D --> E{Opponent Strength?}
+    E -->|Green Weak| F[Week 2 Opportunistic Push<br/>Prioritize Days 4-6 2-4pt]
+    E -->|Yellow Equal| G[Week 2 Bait Mode<br/>Strong Monday then watch reaction]
+    E -->|Red Strong| H[Week 2 Eco Light<br/>Chests Pflichtpunkte stack]
 
-                        E -->|Yes| F[Week 3 = Push for a win]
-                            E -->|No| G[Week 3 = Eco or light play]
+    F --> I[To Week 3]
+    G --> I
+    H --> I
+    C --> J{Week 3 Winnable?}
+    I --> J
 
-                                F --> H{Did we win Week 3?}
-                                    G --> I[Week 4 = Main push week]
-                                        H -->|Yes| I
-                                            H -->|No| I
+    J -->|Yes| K[Week 3 Light Push]
+    J -->|No| L[Week 3 Eco Light]
 
-                                                I --> J{Did we win Week 4?}
-                                                    J -->|Yes| K[Cycle successful<br>1 to 2 wins achieved]
-                                                        J -->|No| L[Hold the class<br>Restart the cycle next week]
+    K --> M[Week 4 Main Push]
+    L --> M
+
+    M --> N{Week 4 Result?}
+    N -->|Win| O[Cycle Success<br/>1-2 Wins achieved<br/>Eco next cycle]
+    N -->|Loss| P[Hold Gold Class<br/>Restart Cycle]
 ```
