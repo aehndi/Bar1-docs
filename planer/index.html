@@ -61,9 +61,9 @@
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
             border: 1px solid #fff;
-            padding: 2px 5px;
-            font-size: 11px;
-            width: 90px;
+            padding: 3px 6px;
+            font-size: 13px;
+            width: 110px;
             text-align: center;
             border-radius: 3px;
             pointer-events: none;
@@ -78,6 +78,7 @@
             color: white;
             text-shadow: 1px 1px 2px black;
             pointer-events: none;
+            font-size: 18px;
         }
 
         .map-title {
@@ -86,7 +87,7 @@
             left: 50%;
             transform: translateX(-50%);
             color: white;
-            font-size: 24px;
+            font-size: 32px;
             font-weight: bold;
             text-shadow: 2px 2px 4px black;
             pointer-events: none;
@@ -285,32 +286,32 @@
         // Basierend auf einem 1000x600 Container
         const positionCoords = {
             // North West
-            'Hubs_North_1': { x: 400, y: 130 },
-            'Hubs_North_2': { x: 400, y: 147 },
-            'Oil_Left_1': { x: 235, y: 213 },
-            'Oil_Left_2': { x: 235, y: 229 },
+            'Hubs_North_1': { x: 400, y: 120 },
+            'Hubs_North_2': { x: 400, y: 145 },
+            'Oil_Left_1': { x: 235, y: 203 },
+            'Oil_Left_2': { x: 235, y: 228 },
             'Free_Center_1': { x: 400, y: 228 },
 
             // North East (Symmetrisch zu NW an X=500)
-            'Hospital_Right_1_1': { x: 765, y: 213 }, // 1000 - 235
-            'Hospital_Right_1_2': { x: 765, y: 229 },
-            'Hospital_Right_2_1': { x: 600, y: 130 }, // 1000 - 400
-            'Hospital_Right_2_2': { x: 600, y: 147 },
-            'Free_Center_2': { x: 600, y: 228 },
+            'Hospital_Right_2_1': { x: 620, y: 120 }, // 1000 - 400 - 110 = 490
+            'Hospital_Right_2_2': { x: 620, y: 145 },
+            'Hospital_Right_1_1': { x: 725, y: 203 }, // 1000 - 235 - 110 = 655
+            'Hospital_Right_1_2': { x: 725, y: 228 },
+            'Free_Center_2': { x: 570, y: 228 },
 
             // South West (Symmetrisch zu NW an Y=300)
-            'Hospital_Left_1_1': { x: 235, y: 371 }, // 600 - 229 (Mitte ist 300, 300+71)
-            'Hospital_Left_1_2': { x: 235, y: 387 }, // 600 - 213
-            'Hospital_Left_2_1': { x: 314, y: 453 }, // 600 - 147
-            'Hospital_Left_2_2': { x: 314, y: 470 }, // 600 - 130
-            'Free_Center_4': { x: 400, y: 372 },     // 600 - 228
+            'Hospital_Left_1_1': { x: 205, y: 371 },
+            'Hospital_Left_1_2': { x: 205, y: 396 },
+            'Hospital_Left_2_1': { x: 274, y: 453 },
+            'Hospital_Left_2_2': { x: 274, y: 478 },
+            'Free_Center_4': { x: 350, y: 372 },
 
             // South East (Symmetrisch zu NE an Y=300)
-            'Oil_Right_1': { x: 765, y: 371 },
-            'Oil_Right_2': { x: 765, y: 387 },
-            'Hubs_South_1': { x: 570, y: 453 },
-            'Hubs_South_2': { x: 570, y: 470 },
-            'Free_Center_3': { x: 600, y: 372 }
+            'Oil_Right_1': { x: 705, y: 371 },
+            'Oil_Right_2': { x: 705, y: 396 },
+            'Hubs_South_1': { x: 545, y: 453 },
+            'Hubs_South_2': { x: 545, y: 478 },
+            'Free_Center_3': { x: 550, y: 372 }
         };
 
         let currentLang = 'EN';
