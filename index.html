@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sheets Daten Anzeige</title>
+    <title>BARI Desert Storm Planer</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         table { border-collapse: collapse; width: 100%; margin-top: 20px; }
@@ -93,18 +93,85 @@
             z-index: 10;
             white-space: nowrap;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+        }
+        .lang-flag {
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            border: 2px solid transparent;
+            border-radius: 5px;
+            transition: all 0.3s;
+            display: inline-block;
+            margin-right: 5px;
+            line-height: 1;
+        }
+
+        .lang-flag.active {
+            border-color: #007bff;
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .lang-flag:hover {
+            background-color: #eee;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Google Sheets Daten</h1>
+    <h1 id="mainTitle">BARI Storm Planer</h1>
 
     <div class="controls">
-        <label for="sheetSelect">Wähle Ansicht:</label>
+        <div id="langSelector" style="display: inline-block; margin-left: 20px; vertical-align: middle;">
+            <span class="lang-flag" data-lang="DE" title="Deutsch">🇩🇪</span>
+            <span class="lang-flag" data-lang="FR" title="Français">🇫🇷</span>
+            <span class="lang-flag" data-lang="EN" title="English">🇬🇧</span>
+            <span class="lang-flag" data-lang="ES" title="Español">🇪🇸</span>
+            <span class="lang-flag" data-lang="UA" title="Українська">🇺🇦</span>
+        </div>
+        <label for="sheetSelect" id="labelView">Wähle Ansicht:</label>
         <select id="sheetSelect">
-            <option value="midi">Midi (Spalten A, B, C)</option>
-            <option value="soir">Soir (Spalten E, F, G)</option>
+            <option value="midi" id="optMidi">Midi</option>
+            <option value="soir" id="optSoir">Soir</option>
         </select>
+
     </div>
 
     <div class="main-layout">
@@ -114,7 +181,7 @@
         </div>
 
         <div id="subsContainer" class="subs-container">
-            <h2>Substitutes</h2>
+            <h2 id="subsTitle">Substitutes</h2>
             <div id="subsList">
                 <!-- Substitutes werden hier eingefügt -->
             </div>
@@ -125,12 +192,94 @@
         Lade Daten...
     </div>
 
+    <!-- Modal -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <h2 id="modalTitle">Spieler Information</h2>
+            <div id="modalText">
+                <!-- Text wird hier eingefügt -->
+            </div>
+        </div>
+    </div>
+
     <script>
         const sheetId = '1HKQTZDZ2RgleQguBB9qVm9dJ-emSh81hEenZfYu8snY';
         const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
 
         let midiData = [];
         let soirData = [];
+
+        const explanations = {
+            'DE': {
+                'regular': 'Dies ist eine reguläre Position auf dem Schlachtfeld. Halte deine Stellung und koordiniere dich mit deinem Partner.',
+                'sub': 'Du bist aktuell als Ersatzspieler eingeteilt. Bitte halte dich bereit, falls jemand ausfällt.'
+            },
+            'FR': {
+                'regular': 'C’est une position régulière sur le champ de bataille. Maintenez votre position et coordonnez-vous avec votre partenaire.',
+                'sub': 'Vous êtes actuellement désigné comme remplaçant. Veuillez rester prêt au cas où quelqu’un se désisterait.'
+            },
+            'EN': {
+                'regular': 'This is a regular position on the battlefield. Hold your position and coordinate with your partner.',
+                'sub': 'You are currently assigned as a substitute. Please stand by in case someone drops out.'
+            },
+            'ES': {
+                'regular': 'Esta es una posición regular en el campo de batalla. Mantén tu posición y coordínate con tu compañero.',
+                'sub': 'Actualmente estás asignado como sustituto. Por favor, mantente a la espera por si alguien se retira.'
+            },
+            'UA': {
+                'regular': 'Це звичайна позиція на полі бою. Утримуйте свою позицію та координуйте дії зі своїм партнером.',
+                'sub': 'Наразі ви призначені заступником. Будь ласка, будьте напоготові на випадок, якщо хтось вибуде.'
+            }
+        };
+
+        const uiTexts = {
+            'DE': {
+                'mainTitle': 'Google Sheets Daten',
+                'labelView': 'Wähle Ansicht:',
+                'midi': 'Midi',
+                'soir': 'Soir',
+                'subsTitle': 'Ersatzspieler',
+                'modalTitle': 'Spieler Information',
+                'loading': 'Lade Daten...'
+            },
+            'FR': {
+                'mainTitle': 'Données Google Sheets',
+                'labelView': 'Choisir la vue :',
+                'midi': 'Midi',
+                'soir': 'Soir',
+                'subsTitle': 'Remplaçants',
+                'modalTitle': 'Informations sur le joueur',
+                'loading': 'Chargement des données...'
+            },
+            'EN': {
+                'mainTitle': 'Google Sheets Data',
+                'labelView': 'Select View:',
+                'midi': 'Midi',
+                'soir': 'Soir',
+                'subsTitle': 'Substitutes',
+                'modalTitle': 'Player Information',
+                'loading': 'Loading data...'
+            },
+            'ES': {
+                'mainTitle': 'Datos de Google Sheets',
+                'labelView': 'Seleccionar vista:',
+                'midi': 'Midi',
+                'soir': 'Soir',
+                'subsTitle': 'Sustitutos',
+                'modalTitle': 'Información del jugador',
+                'loading': 'Cargando datos...'
+            },
+            'UA': {
+                'mainTitle': 'Дані Google Sheets',
+                'labelView': 'Виберіть вигляд:',
+                'midi': 'Міді',
+                'soir': 'Суар',
+                'subsTitle': 'Запасні',
+                'modalTitle': 'Інформація про гравця',
+                'loading': 'Завантаження даних...'
+            }
+        };
 
         // Exakte Koordinaten für alle Positionen (Pixel)
         // Basierend auf einem 1000x600 Container
@@ -163,6 +312,62 @@
             'Hubs_South_2': { x: 570, y: 470 },
             'Free_Center_3': { x: 600, y: 372 }
         };
+
+        let currentLang = 'EN';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-flag').forEach(flag => {
+                if (flag.getAttribute('data-lang') === lang) {
+                    flag.classList.add('active');
+                } else {
+                    flag.classList.remove('active');
+                }
+            });
+
+            // UI Texte aktualisieren
+            const texts = uiTexts[lang];
+            document.getElementById('mainTitle').innerText = texts.mainTitle;
+            document.getElementById('labelView').innerText = texts.labelView;
+            document.getElementById('optMidi').innerText = texts.midi;
+            document.getElementById('optSoir').innerText = texts.soir;
+            document.getElementById('subsTitle').innerText = texts.subsTitle;
+            document.getElementById('modalTitle').innerText = texts.modalTitle;
+            
+            const tableContainer = document.getElementById('tableContainer');
+            if (tableContainer.innerText.includes('Lade') || tableContainer.innerText.includes('Loading') || tableContainer.innerText.includes('Données') || tableContainer.innerText.includes('Cargando') || tableContainer.innerText.includes('Завантаження')) {
+                tableContainer.innerText = texts.loading;
+            }
+
+            // Falls schon Daten da sind, Anzeige aktualisieren (für Tabelle)
+            if (midiData.length > 0) {
+                renderTable();
+            }
+        }
+
+        // Automatische Spracherkennung
+        function detectLanguage() {
+            const browserLang = (navigator.language || navigator.userLanguage).split('-')[0].toUpperCase();
+            const supported = ['DE', 'FR', 'EN', 'ES', 'UA'];
+            
+            // Map 'UK' (Ukraine) to 'UA' if necessary, though navigator usually gives 'uk'
+            let target = browserLang;
+            if (target === 'UK') target = 'UA'; 
+            
+            if (supported.includes(target)) {
+                setLanguage(target);
+            } else if (browserLang === 'UK') { // Special case for Ukrainian
+                setLanguage('UA');
+            } else {
+                setLanguage('EN'); // Fallback
+            }
+        }
+
+        document.querySelectorAll('.lang-flag').forEach(flag => {
+            flag.onclick = function() {
+                setLanguage(this.getAttribute('data-lang'));
+            };
+        });
 
         async function fetchData() {
             try {
@@ -260,6 +465,8 @@
                         const div = document.createElement('div');
                         div.className = 'sub-item';
                         div.innerText = p.player;
+                        div.style.cursor = 'pointer';
+                        div.onclick = () => openModal(p.player, 'sub');
                         subsList.appendChild(div);
                     }
                     return;
@@ -272,17 +479,44 @@
                     box.className = 'player-box';
                     box.innerText = p.player || p.position;
                     box.title = `${p.position}: ${p.player}`;
+                    box.style.pointerEvents = 'auto';
+                    box.style.cursor = 'pointer';
                     
                     // Der Benutzer hat Koordinaten gegeben, die vermutlich die linke obere Ecke sind
                     // (da er style="left: 400px;top: 130px;" geschrieben hat)
                     box.style.left = coords.x + 'px';
                     box.style.top = coords.y + 'px';
                     
+                    box.onclick = () => openModal(p.player || p.position, 'regular');
+
                     mapContainer.appendChild(box);
                 } else {
                     console.warn('Keine Koordinaten für Position gefunden:', p.position);
                 }
             });
+        }
+
+        function openModal(playerName, type) {
+            const lang = currentLang;
+            const modal = document.getElementById('infoModal');
+            const title = document.getElementById('modalTitle');
+            const text = document.getElementById('modalText');
+
+            title.innerText = playerName;
+            text.innerText = explanations[lang][type];
+            modal.style.display = 'block';
+        }
+
+        // Modal schließen Logik
+        window.onclick = function(event) {
+            const modal = document.getElementById('infoModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        document.getElementById('closeModal').onclick = function() {
+            document.getElementById('infoModal').style.display = 'none';
         }
 
         function renderTable() {
@@ -304,6 +538,8 @@
         }
 
         document.getElementById('sheetSelect').addEventListener('change', updateDisplay);
+        // Initialisierung
+        detectLanguage();
         fetchData();
     </script>
 </body>
