@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets Daten Anzeige</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        select { padding: 8px; font-size: 16px; }
+        .controls { margin-bottom: 20px; }
+
+        .main-layout {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 0 auto;
+            max-width: 1300px;
+        }
+
+        .map-container {
+            position: relative;
+            flex-shrink: 0;
+            width: 1000px;
+            height: 600px;
+            background-image: url('Desert-Storm-Battlefield-Map-4159823870.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border: 2px solid #333;
+        }
+
+        .subs-container {
+            width: 200px;
+            border: 2px solid #333;
+            background-color: #f9f9f9;
+            padding: 10px;
+            overflow-y: auto;
+            height: 581px;
+        }
+
+        .subs-container h2 {
+            margin-top: 0;
+            font-size: 18px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+
+        .sub-item {
+            background-color: #eee;
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
+        .player-box {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: 1px solid #fff;
+            padding: 2px 5px;
+            font-size: 11px;
+            width: 90px;
+            text-align: center;
+            border-radius: 3px;
+            pointer-events: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .quarter-label {
+            position: absolute;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+            pointer-events: none;
+        }
+
+        .map-title {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px black;
+            pointer-events: none;
+            z-index: 10;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Google Sheets Daten</h1>
+
+    <div class="controls">
+        <label for="sheetSelect">Wähle Ansicht:</label>
+        <select id="sheetSelect">
+            <option value="midi">Midi (Spalten A, B, C)</option>
+            <option value="soir">Soir (Spalten E, F, G)</option>
+        </select>
+    </div>
+
+    <div class="main-layout">
+        <div id="mapContainer" class="map-container">
+            <div id="mapTitle" class="map-title"></div>
+            <!-- Spielerboxen werden hier dynamisch eingefügt -->
+        </div>
+
+        <div id="subsContainer" class="subs-container">
+            <h2>Substitutes</h2>
+            <div id="subsList">
+                <!-- Substitutes werden hier eingefügt -->
+            </div>
+        </div>
+    </div>
+
+    <div id="tableContainer">
+        Lade Daten...
+    </div>
+
+    <script>
+        const sheetId = '1HKQTZDZ2RgleQguBB9qVm9dJ-emSh81hEenZfYu8snY';
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+
+        let midiData = [];
+        let soirData = [];
+
+        // Exakte Koordinaten für alle Positionen (Pixel)
+        // Basierend auf einem 1000x600 Container
+        const positionCoords = {
+            // North West
+            'Hubs_North_1': { x: 400, y: 130 },
+            'Hubs_North_2': { x: 400, y: 147 },
+            'Oil_Left_1': { x: 235, y: 213 },
+            'Oil_Left_2': { x: 235, y: 229 },
+            'Free_Center_1': { x: 400, y: 228 },
+
+            // North East (Symmetrisch zu NW an X=500)
+            'Hospital_Right_1_1': { x: 765, y: 213 }, // 1000 - 235
+            'Hospital_Right_1_2': { x: 765, y: 229 },
+            'Hospital_Right_2_1': { x: 600, y: 130 }, // 1000 - 400
+            'Hospital_Right_2_2': { x: 600, y: 147 },
+            'Free_Center_2': { x: 600, y: 228 },
+
+            // South West (Symmetrisch zu NW an Y=300)
+            'Hospital_Left_1_1': { x: 235, y: 371 }, // 600 - 229 (Mitte ist 300, 300+71)
+            'Hospital_Left_1_2': { x: 235, y: 387 }, // 600 - 213
+            'Hospital_Left_2_1': { x: 314, y: 453 }, // 600 - 147
+            'Hospital_Left_2_2': { x: 314, y: 470 }, // 600 - 130
+            'Free_Center_4': { x: 400, y: 372 },     // 600 - 228
+
+            // South East (Symmetrisch zu NE an Y=300)
+            'Oil_Right_1': { x: 765, y: 371 },
+            'Oil_Right_2': { x: 765, y: 387 },
+            'Hubs_South_1': { x: 570, y: 453 },
+            'Hubs_South_2': { x: 570, y: 470 },
+            'Free_Center_3': { x: 600, y: 372 }
+        };
+
+        async function fetchData() {
+            try {
+                const response = await fetch(csvUrl);
+                const text = await response.text();
+                parseData(text);
+                updateDisplay();
+            } catch (error) {
+                console.error('Fehler beim Abrufen der Daten:', error);
+                document.getElementById('tableContainer').innerText = 'Fehler beim Laden der Daten.';
+            }
+        }
+
+        function parseData(csvText) {
+            const lines = csvText.split('\n');
+            midiData = [];
+            soirData = [];
+
+            for (let i = 2; i < 32; i++) {
+                if (!lines[i]) continue;
+                const columns = parseCsvLine(lines[i]);
+                
+                if (columns[0]) {
+                    midiData.push({
+                        quarter: columns[0] || '',
+                        position: columns[1] || '',
+                        player: columns[2] || ''
+                    });
+                }
+
+                if (columns[4]) {
+                    soirData.push({
+                        quarter: columns[4] || '',
+                        position: columns[5] || '',
+                        player: columns[6] || ''
+                    });
+                }
+            }
+        }
+
+        function parseCsvLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function updateDisplay() {
+            renderTable();
+            renderMap();
+        }
+
+        function renderMap() {
+            const selection = document.getElementById('sheetSelect').value;
+            const data = selection === 'midi' ? midiData : soirData;
+            const mapContainer = document.getElementById('mapContainer');
+            const subsList = document.getElementById('subsList');
+            const mapTitle = document.getElementById('mapTitle');
+            
+            // Titel setzen
+            if (selection === 'midi') {
+                mapTitle.innerText = '13:00 CEST / 9:00 Server';
+            } else {
+                mapTitle.innerText = '22:00 CEST / 18:00 Server';
+            }
+
+            // Container leeren (außer Titel)
+            // Wir entfernen alle Kinder außer dem mapTitle
+            Array.from(mapContainer.children).forEach(child => {
+                if (child.id !== 'mapTitle') {
+                    mapContainer.removeChild(child);
+                }
+            });
+            
+            subsList.innerHTML = '';
+
+            data.forEach(p => {
+                const quarter = p.quarter || 'Subs';
+
+                // Sonderbehandlung für Substitutes
+                if (quarter.toLowerCase().includes('sub') || quarter === 'Subs') {
+                    if (p.player) {
+                        const div = document.createElement('div');
+                        div.className = 'sub-item';
+                        div.innerText = p.player;
+                        subsList.appendChild(div);
+                    }
+                    return;
+                }
+
+                // Reguläre Spieler auf der Karte
+                const coords = positionCoords[p.position];
+                if (coords) {
+                    const box = document.createElement('div');
+                    box.className = 'player-box';
+                    box.innerText = p.player || p.position;
+                    box.title = `${p.position}: ${p.player}`;
+                    
+                    // Der Benutzer hat Koordinaten gegeben, die vermutlich die linke obere Ecke sind
+                    // (da er style="left: 400px;top: 130px;" geschrieben hat)
+                    box.style.left = coords.x + 'px';
+                    box.style.top = coords.y + 'px';
+                    
+                    mapContainer.appendChild(box);
+                } else {
+                    console.warn('Keine Koordinaten für Position gefunden:', p.position);
+                }
+            });
+        }
+
+        function renderTable() {
+            const selection = document.getElementById('sheetSelect').value;
+            const data = selection === 'midi' ? midiData : soirData;
+            const container = document.getElementById('tableContainer');
+
+            if (data.length === 0) {
+                container.innerText = 'Keine Daten gefunden.';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Quarter</th><th>Position</th><th>Player</th></tr></thead><tbody>';
+            data.forEach(row => {
+                html += `<tr><td>${row.quarter}</td><td>${row.position}</td><td>${row.player}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        document.getElementById('sheetSelect').addEventListener('change', updateDisplay);
+        fetchData();
+    </script>
+</body>
+</html>
