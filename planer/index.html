@@ -292,49 +292,74 @@
 
         const uiTexts = {
             'DE': {
-                'mainTitle': 'Google Sheets Daten',
+                'mainTitle': 'BARI Storm Planer',
                 'labelView': 'Wähle Ansicht:',
-                'midi': 'Midi',
-                'soir': 'Soir',
+                'midi': 'Mittag (Midi)',
+                'soir': 'Abend (Soir)',
                 'subsTitle': 'Ersatzspieler',
                 'modalTitle': 'Spieler Information',
-                'loading': 'Lade Daten...'
+                'loading': 'Lade Daten...',
+                'noData': 'Keine Daten gefunden.',
+                'error': 'Fehler beim Laden der Daten.',
+                'colQuarter': 'Viertel',
+                'colPosition': 'Position',
+                'colPlayer': 'Spieler'
             },
             'FR': {
-                'mainTitle': 'Données Google Sheets',
+                'mainTitle': 'BARI Storm Planer',
                 'labelView': 'Choisir la vue :',
                 'midi': 'Midi',
                 'soir': 'Soir',
                 'subsTitle': 'Remplaçants',
                 'modalTitle': 'Informations sur le joueur',
-                'loading': 'Chargement des données...'
+                'loading': 'Chargement des données...',
+                'noData': 'Aucune donnée trouvée.',
+                'error': 'Erreur lors du chargement des données.',
+                'colQuarter': 'Quartier',
+                'colPosition': 'Position',
+                'colPlayer': 'Joueur'
             },
             'EN': {
-                'mainTitle': 'Google Sheets Data',
+                'mainTitle': 'BARI Storm Planer',
                 'labelView': 'Select View:',
-                'midi': 'Midi',
-                'soir': 'Soir',
+                'midi': 'Midi (Lunch)',
+                'soir': 'Soir (Evening)',
                 'subsTitle': 'Substitutes',
                 'modalTitle': 'Player Information',
-                'loading': 'Loading data...'
+                'loading': 'Loading data...',
+                'noData': 'No data found.',
+                'error': 'Error loading data.',
+                'colQuarter': 'Quarter',
+                'colPosition': 'Position',
+                'colPlayer': 'Player'
             },
             'ES': {
-                'mainTitle': 'Datos de Google Sheets',
+                'mainTitle': 'BARI Storm Planer',
                 'labelView': 'Seleccionar vista:',
                 'midi': 'Midi',
                 'soir': 'Soir',
                 'subsTitle': 'Sustitutos',
                 'modalTitle': 'Información del jugador',
-                'loading': 'Cargando datos...'
+                'loading': 'Cargando datos...',
+                'noData': 'No se encontraron datos.',
+                'error': 'Error al cargar los datos.',
+                'colQuarter': 'Trimestre',
+                'colPosition': 'Posición',
+                'colPlayer': 'Jugador'
             },
             'UA': {
-                'mainTitle': 'Дані Google Sheets',
+                'mainTitle': 'BARI Storm Planer',
                 'labelView': 'Виберіть вигляд:',
-                'midi': 'Міді',
-                'soir': 'Суар',
+                'midi': 'Обід (Midi)',
+                'soir': 'Вечір (Soir)',
                 'subsTitle': 'Запасні',
                 'modalTitle': 'Інформація про гравця',
-                'loading': 'Завантаження даних...'
+                'loading': 'Завантаження даних...',
+                'noData': 'Даних не знайдено.',
+                'error': 'Помилка завантаження даних.',
+                'colQuarter': 'Чверть',
+                'colPosition': 'Позиція',
+                'colPlayer': 'Гравець'
             }
         };
 
@@ -392,8 +417,12 @@
             document.getElementById('modalTitle').innerText = texts.modalTitle;
             
             const tableContainer = document.getElementById('tableContainer');
-            if (tableContainer.innerText.includes('Lade') || tableContainer.innerText.includes('Loading') || tableContainer.innerText.includes('Données') || tableContainer.innerText.includes('Cargando') || tableContainer.innerText.includes('Завантаження')) {
-                tableContainer.innerText = texts.loading;
+            if (tableContainer.innerText.includes('Lade') || tableContainer.innerText.includes('Loading') || tableContainer.innerText.includes('Données') || tableContainer.innerText.includes('Cargando') || tableContainer.innerText.includes('Завантаження') || tableContainer.innerText.includes('Fehler') || tableContainer.innerText.includes('Error') || tableContainer.innerText.includes('Erreur') || tableContainer.innerText.includes('Помилка')) {
+                if (tableContainer.innerText.includes('Fehler') || tableContainer.innerText.includes('Error') || tableContainer.innerText.includes('Erreur') || tableContainer.innerText.includes('Помилка')) {
+                    tableContainer.innerText = texts.error;
+                } else {
+                    tableContainer.innerText = texts.loading;
+                }
             }
 
             // Falls schon Daten da sind, Anzeige aktualisieren (für Tabelle)
@@ -434,7 +463,7 @@
                 updateDisplay();
             } catch (error) {
                 console.error('Fehler beim Abrufen der Daten:', error);
-                document.getElementById('tableContainer').innerText = 'Fehler beim Laden der Daten.';
+                document.getElementById('tableContainer').innerText = uiTexts[currentLang].error;
             }
         }
 
@@ -578,20 +607,40 @@
             }
         });
 
+        function isDST(date) {
+            const year = date.getFullYear();
+            // DST starts on the last Sunday of March
+            const startDST = new Date(year, 2, 31);
+            startDST.setDate(31 - startDST.getDay());
+            startDST.setHours(2, 0, 0, 0);
+
+            // DST ends on the last Sunday of October
+            const endDST = new Date(year, 9, 31);
+            endDST.setDate(31 - endDST.getDay());
+            endDST.setHours(3, 0, 0, 0);
+
+            return date >= startDST && date < endDST;
+        }
+
+        function getTimezoneLabel() {
+            return isDST(new Date()) ? 'CEST' : 'CET';
+        }
+
         function renderMap() {
             const selection = document.getElementById('sheetSelect').value;
             const data = selection === 'midi' ? midiData : soirData;
             const mapContainer = document.getElementById('mapContainer');
             const subsList = document.getElementById('subsList');
             const mapTitle = document.getElementById('mapTitle');
+            const tz = getTimezoneLabel();
             
             if (!mapContainer || !subsList || !mapTitle) return;
 
             // Titel setzen
             if (selection === 'midi') {
-                mapTitle.innerText = '13:00 CEST / 9:00 Server';
+                mapTitle.innerText = `13:00 ${tz} / 9:00 Server`;
             } else {
-                mapTitle.innerText = '22:00 CEST / 18:00 Server';
+                mapTitle.innerText = `22:00 ${tz} / 18:00 Server`;
             }
 
             // Container leeren (außer Titel)
@@ -672,13 +721,14 @@
             const selection = document.getElementById('sheetSelect').value;
             const data = selection === 'midi' ? midiData : soirData;
             const container = document.getElementById('tableContainer');
+            const texts = uiTexts[currentLang];
 
             if (data.length === 0) {
-                container.innerText = 'Keine Daten gefunden.';
+                container.innerText = texts.noData;
                 return;
             }
 
-            let html = '<table><thead><tr><th>Quarter</th><th>Position</th><th>Player</th></tr></thead><tbody>';
+            let html = `<table><thead><tr><th>${texts.colQuarter}</th><th>${texts.colPosition}</th><th>${texts.colPlayer}</th></tr></thead><tbody>`;
             data.forEach(row => {
                 html += `<tr><td>${row.quarter}</td><td>${row.position}</td><td>${row.player}</td></tr>`;
             });
