@@ -26,7 +26,7 @@
             width: 100%;
             display: flex;
             justify-content: center;
-            overflow: visible;
+            overflow: hidden; /* Verhindert Scrollbalken durch transformierte Kinder */
         }
 
         @media (max-width: 770px) {
@@ -58,6 +58,7 @@
             box-sizing: border-box;
             margin-left: 60px; 
             transform-origin: top left;
+            display: flow-root; /* Verhindert Margin-Collapsing und verbessert Höhenberechnung */
         }
 
         .subs-container h2 {
@@ -79,6 +80,13 @@
             #subsList {
                 grid-template-columns: repeat(5, 110px);
                 justify-content: center;
+            }
+            .subs-container {
+                border: none !important;
+            }
+            .subs-outer-wrapper {
+                border: 1px solid #333;
+                box-sizing: border-box;
             }
         }
 
@@ -209,11 +217,13 @@
             <span class="lang-flag" data-lang="ES" title="Español">🇪🇸</span>
             <span class="lang-flag" data-lang="UA" title="Українська">🇺🇦</span>
         </div>
-        <label for="sheetSelect" id="labelView">Wähle Ansicht:</label>
-        <select id="sheetSelect">
-            <option value="midi" id="optMidi">Midi</option>
-            <option value="soir" id="optSoir">Soir</option>
-        </select>
+        <div>
+            <label for="sheetSelect" id="labelView">Wähle Ansicht:</label>
+            <select id="sheetSelect">
+                <option value="midi" id="optMidi">Midi</option>
+                <option value="soir" id="optSoir">Soir</option>
+            </select>
+        </div>
 
     </div>
 
@@ -475,9 +485,10 @@
         }
 
         function updateDisplay() {
-            renderTable();
             renderMap();
-            adjustMapScale();
+            renderTable();
+            // adjustMapScale wird jetzt am Ende von renderMap gerufen, 
+            // nachdem die DOM-Elemente für die Subs erstellt wurden.
         }
 
         function adjustMapScale() {
@@ -512,9 +523,32 @@
                 // Wir messen die unskalierte Höhe
                 const currentTransform = subsContainer.style.transform;
                 subsContainer.style.transform = 'none';
-                const originalSubsHeight = subsContainer.offsetHeight + 2; 
+                
+                // Layout-Reflow erzwingen
+                void subsContainer.offsetHeight;
+
+                // Wir nutzen offsetHeight für die unskalierte Box-Höhe
+                const originalSubsHeight = Math.max(subsContainer.offsetHeight, subsContainer.scrollHeight) || 200;
+                const originalSubsWidth = subsContainer.offsetWidth || 610;
+                
                 subsContainer.style.transform = currentTransform;
-                subsWrapper.style.height = (originalSubsHeight * scale) + 'px';
+
+                // Breite und Höhe des Wrappers exakt auf die skalierte Größe setzen
+                let finalWidth = originalSubsWidth * scale;
+                let finalHeight = originalSubsHeight * scale;
+
+                // Falls wir im mobilen Modus (< 600px) sind, müssen wir den Border und das Padding 
+                // des Wrappers berücksichtigen, damit nichts abgeschnitten wird.
+                if (window.innerWidth <= 600) {
+                    finalHeight += 20; // padding-bottom: 20px
+                    // Border (2px links + 2px rechts) wird durch box-sizing: border-box im CSS abgefangen,
+                    // aber wir setzen die Breite hier explizit. 
+                    // Wenn der Wrapper selbst den Border hat, sollte er die volle Breite einnehmen oder 
+                    // zumindest groß genug sein.
+                }
+
+                subsWrapper.style.width = finalWidth + 'px';
+                subsWrapper.style.height = finalHeight + 'px';
                 
                 if (window.innerWidth <= 770 || availableWidth < mapWidth) {
                     subsContainer.style.marginLeft = "0";
@@ -525,6 +559,7 @@
                 map.style.transform = 'none';
                 wrapper.style.height = '600px';
                 subsContainer.style.transform = 'none';
+                subsWrapper.style.width = '100%';
                 subsWrapper.style.height = 'auto';
                 if (window.innerWidth <= 770) {
                     subsContainer.style.marginLeft = "0";
@@ -535,6 +570,13 @@
         }
 
         window.addEventListener('resize', adjustMapScale);
+
+        // ResizeObserver hinzufügen, um auf Inhaltsänderungen zu reagieren
+        const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                adjustMapScale();
+            }
+        });
 
         function renderMap() {
             const selection = document.getElementById('sheetSelect').value;
@@ -596,6 +638,11 @@
                     console.warn('Keine Koordinaten für Position gefunden:', p.position);
                 }
             });
+
+            // Wichtig: Skalierung erst berechnen, wenn die Elemente im DOM sind
+            requestAnimationFrame(() => {
+                adjustMapScale();
+            });
         }
 
         function openModal(playerName, type) {
@@ -640,10 +687,17 @@
         }
 
         document.getElementById('sheetSelect').addEventListener('change', updateDisplay);
-        // Initialisierung
-        detectLanguage();
-        fetchData();
-        // Sicherstellen, dass die Skalierung nach dem Laden der Daten erfolgt
+            // Initialisierung
+            detectLanguage();
+            fetchData();
+            
+            // Observer auf den Container setzen
+            const subsContainer = document.getElementById('subsContainer');
+            if (subsContainer) {
+                resizeObserver.observe(subsContainer);
+            }
+
+            // Sicherstellen, dass die Skalierung nach dem Laden der Daten erfolgt
         setTimeout(adjustMapScale, 500);
     </script>
 </body>
