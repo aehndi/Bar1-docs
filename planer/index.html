@@ -19,18 +19,18 @@
             gap: 20px;
             margin: 0 auto;
             max-width: 100%;
-            overflow-x: hidden;
+            /* overflow-x: hidden entfernt, damit skaliertes nichts abschneidet */
         }
 
-        .map-outer-wrapper {
+        .map-outer-wrapper, .subs-outer-wrapper {
             width: 100%;
             display: flex;
             justify-content: center;
             overflow: visible;
         }
 
-        @media (max-width: 1000px) {
-            .map-outer-wrapper {
+        @media (max-width: 770px) {
+            .map-outer-wrapper, .subs-outer-wrapper {
                 justify-content: flex-start;
             }
         }
@@ -38,7 +38,7 @@
         .map-container {
             position: relative;
             flex-shrink: 0;
-            width: 1000px;
+            width: 770px;
             height: 600px;
             background-image: url('Desert-Storm-Battlefield-Map-4159823870.jpg');
             background-size: cover;
@@ -49,13 +49,15 @@
         }
 
         .subs-container {
-            width: 630px;
-            max-width: 100%;
+            width: fit-content;
+            min-width: 610px; /* 5*110 + 4*10 + 2*10 padding */
+            max-width: none;
             border: 2px solid #333;
             background-color: #f9f9f9;
             padding: 10px;
             box-sizing: border-box;
-            margin-left: 20px; /* (Center of boxes 520 - Center of map 500) = 20px Versatz */
+            margin-left: 60px; 
+            transform-origin: top left;
         }
 
         .subs-container h2 {
@@ -68,18 +70,15 @@
 
         #subsList {
             display: grid;
-            grid-template-columns: repeat(4, 110px);
-            justify-content: space-between;
+            grid-template-columns: repeat(5, 110px);
+            justify-content: center;
             gap: 10px;
         }
 
         @media (max-width: 600px) {
             #subsList {
-                grid-template-columns: repeat(2, 110px);
-                justify-content: space-around;
-            }
-            .subs-container {
-                margin-left: 0;
+                grid-template-columns: repeat(5, 110px);
+                justify-content: center;
             }
         }
 
@@ -107,10 +106,12 @@
             width: 110px;
             text-align: center;
             border-radius: 3px;
-            pointer-events: none;
+            pointer-events: auto; /* Geändert von none auf auto für Klickbarkeit */
+            cursor: pointer;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            z-index: 5;
         }
 
         .quarter-label {
@@ -224,10 +225,12 @@
             </div>
         </div>
 
-        <div id="subsContainer" class="subs-container">
-            <h2 id="subsTitle">Substitutes</h2>
-            <div id="subsList">
-                <!-- Substitutes werden hier eingefügt -->
+        <div class="subs-outer-wrapper" id="subsWrapper">
+            <div id="subsContainer" class="subs-container">
+                <h2 id="subsTitle">Substitutes</h2>
+                <div id="subsList">
+                    <!-- Substitutes werden hier eingefügt -->
+                </div>
             </div>
         </div>
     </div>
@@ -329,32 +332,32 @@
         // Basierend auf einem 1000x600 Container
         const positionCoords = {
             // North West
-            'Hubs_North_1': { x: 400, y: 120 },
-            'Hubs_North_2': { x: 400, y: 145 },
-            'Oil_Left_1': { x: 235, y: 203 },
-            'Oil_Left_2': { x: 235, y: 228 },
-            'Free_Center_1': { x: 400, y: 228 },
+            'Hubs_North_1': { x: 270, y: 120 },
+            'Hubs_North_2': { x: 270, y: 145 },
+            'Oil_Left_1': { x: 105, y: 203 },
+            'Oil_Left_2': { x: 105, y: 228 },
+            'Free_Center_1': { x: 270, y: 228 },
 
-            // North East (Symmetrisch zu NW an X=500)
-            'Hospital_Right_2_1': { x: 620, y: 120 }, // 1000 - 400 - 110 = 490
-            'Hospital_Right_2_2': { x: 620, y: 145 },
-            'Hospital_Right_1_1': { x: 725, y: 203 }, // 1000 - 235 - 110 = 655
-            'Hospital_Right_1_2': { x: 725, y: 228 },
-            'Free_Center_2': { x: 570, y: 228 },
+            // North East (Symmetrisch zu NW an X=400)
+            'Hospital_Right_2_1': { x: 490, y: 120 }, 
+            'Hospital_Right_2_2': { x: 490, y: 145 },
+            'Hospital_Right_1_1': { x: 595, y: 203 }, 
+            'Hospital_Right_1_2': { x: 595, y: 228 },
+            'Free_Center_2': { x: 440, y: 228 },
 
             // South West (Symmetrisch zu NW an Y=300)
-            'Hospital_Left_1_1': { x: 205, y: 371 },
-            'Hospital_Left_1_2': { x: 205, y: 396 },
-            'Hospital_Left_2_1': { x: 274, y: 453 },
-            'Hospital_Left_2_2': { x: 274, y: 478 },
-            'Free_Center_4': { x: 350, y: 372 },
+            'Hospital_Left_1_1': { x: 75, y: 371 },
+            'Hospital_Left_1_2': { x: 75, y: 396 },
+            'Hospital_Left_2_1': { x: 144, y: 453 },
+            'Hospital_Left_2_2': { x: 144, y: 478 },
+            'Free_Center_4': { x: 220, y: 372 },
 
             // South East (Symmetrisch zu NE an Y=300)
-            'Oil_Right_1': { x: 705, y: 371 },
-            'Oil_Right_2': { x: 705, y: 396 },
-            'Hubs_South_1': { x: 545, y: 453 },
-            'Hubs_South_2': { x: 545, y: 478 },
-            'Free_Center_3': { x: 550, y: 372 }
+            'Oil_Right_1': { x: 575, y: 371 },
+            'Oil_Right_2': { x: 575, y: 396 },
+            'Hubs_South_1': { x: 415, y: 453 },
+            'Hubs_South_2': { x: 415, y: 478 },
+            'Free_Center_3': { x: 420, y: 372 }
         };
 
         let currentLang = 'EN';
@@ -480,18 +483,54 @@
         function adjustMapScale() {
             const wrapper = document.getElementById('mapWrapper');
             const map = document.getElementById('mapContainer');
+            const subsWrapper = document.getElementById('subsWrapper');
+            const subsContainer = document.getElementById('subsContainer');
+            
+            if (!wrapper || !map || !subsWrapper || !subsContainer) return;
+
             const availableWidth = wrapper.offsetWidth;
-            const mapWidth = 1000; // Originalbreite
+            if (availableWidth <= 0) {
+                // Falls die Breite noch nicht bekannt ist (z.B. beim initialen Laden), 
+                // versuchen wir es nach einer kurzen Verzögerung erneut.
+                setTimeout(adjustMapScale, 100);
+                return;
+            }
+
+            const mapWidth = 770; // Originalbreite
 
             if (availableWidth < mapWidth) {
                 const scale = availableWidth / mapWidth;
+                
+                // Map skalieren
                 map.style.transform = `scale(${scale})`;
-                // Da wir transform-origin: top left nutzen, müssen wir die Höhe des Wrappers anpassen,
-                // da das skalierte Element immer noch seinen ursprünglichen Platz im Layout beansprucht.
                 wrapper.style.height = (600 * scale) + 'px';
+
+                // Skalierung für Substitutes
+                subsContainer.style.transform = `scale(${scale})`;
+                
+                // Höhe des Subs-Wrappers anpassen
+                // Wir messen die unskalierte Höhe
+                const currentTransform = subsContainer.style.transform;
+                subsContainer.style.transform = 'none';
+                const originalSubsHeight = subsContainer.offsetHeight + 2; 
+                subsContainer.style.transform = currentTransform;
+                subsWrapper.style.height = (originalSubsHeight * scale) + 'px';
+                
+                if (window.innerWidth <= 770 || availableWidth < mapWidth) {
+                    subsContainer.style.marginLeft = "0";
+                } else {
+                    subsContainer.style.marginLeft = (60 * scale) + "px";
+                }
             } else {
                 map.style.transform = 'none';
                 wrapper.style.height = '600px';
+                subsContainer.style.transform = 'none';
+                subsWrapper.style.height = 'auto';
+                if (window.innerWidth <= 770) {
+                    subsContainer.style.marginLeft = "0";
+                } else {
+                    subsContainer.style.marginLeft = "60px";
+                }
             }
         }
 
@@ -504,6 +543,8 @@
             const subsList = document.getElementById('subsList');
             const mapTitle = document.getElementById('mapTitle');
             
+            if (!mapContainer || !subsList || !mapTitle) return;
+
             // Titel setzen
             if (selection === 'midi') {
                 mapTitle.innerText = '13:00 CEST / 9:00 Server';
@@ -544,11 +585,7 @@
                     box.className = 'player-box';
                     box.innerText = p.player || p.position;
                     box.title = `${p.position}: ${p.player}`;
-                    box.style.pointerEvents = 'auto';
-                    box.style.cursor = 'pointer';
                     
-                    // Der Benutzer hat Koordinaten gegeben, die vermutlich die linke obere Ecke sind
-                    // (da er style="left: 400px;top: 130px;" geschrieben hat)
                     box.style.left = coords.x + 'px';
                     box.style.top = coords.y + 'px';
                     
