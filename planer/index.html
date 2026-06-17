@@ -14,10 +14,25 @@
 
         .main-layout {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             gap: 20px;
             margin: 0 auto;
-            max-width: 1300px;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .map-outer-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            overflow: visible;
+        }
+
+        @media (max-width: 1000px) {
+            .map-outer-wrapper {
+                justify-content: flex-start;
+            }
         }
 
         .map-container {
@@ -30,15 +45,17 @@
             background-position: center;
             background-repeat: no-repeat;
             border: 2px solid #333;
+            transform-origin: top left;
         }
 
         .subs-container {
-            width: 200px;
+            width: 630px;
+            max-width: 100%;
             border: 2px solid #333;
             background-color: #f9f9f9;
             padding: 10px;
-            overflow-y: auto;
-            height: 581px;
+            box-sizing: border-box;
+            margin-left: 20px; /* (Center of boxes 520 - Center of map 500) = 20px Versatz */
         }
 
         .subs-container h2 {
@@ -46,14 +63,38 @@
             font-size: 18px;
             border-bottom: 1px solid #ccc;
             padding-bottom: 5px;
+            text-align: center;
+        }
+
+        #subsList {
+            display: grid;
+            grid-template-columns: repeat(4, 110px);
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            #subsList {
+                grid-template-columns: repeat(2, 110px);
+                justify-content: space-around;
+            }
+            .subs-container {
+                margin-left: 0;
+            }
         }
 
         .sub-item {
             background-color: #eee;
-            margin-bottom: 5px;
-            padding: 5px;
+            padding: 3px 6px;
             border-radius: 3px;
             font-size: 13px;
+            text-align: center;
+            border: 1px solid #ccc;
+            width: 110px;
+            box-sizing: border-box;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .player-box {
@@ -157,9 +198,9 @@
 </head>
 <body>
 
-    <h1 id="mainTitle">BARI Storm Planer</h1>
+    <h1 id="mainTitle" style="text-align: center;">BARI Storm Planer</h1>
 
-    <div class="controls">
+    <div class="controls" style="text-align: center;">
         <div id="langSelector" style="display: inline-block; margin-left: 20px; vertical-align: middle;">
             <span class="lang-flag" data-lang="DE" title="Deutsch">🇩🇪</span>
             <span class="lang-flag" data-lang="FR" title="Français">🇫🇷</span>
@@ -176,9 +217,11 @@
     </div>
 
     <div class="main-layout">
-        <div id="mapContainer" class="map-container">
-            <div id="mapTitle" class="map-title"></div>
-            <!-- Spielerboxen werden hier dynamisch eingefügt -->
+        <div class="map-outer-wrapper" id="mapWrapper">
+            <div id="mapContainer" class="map-container">
+                <div id="mapTitle" class="map-title"></div>
+                <!-- Spielerboxen werden hier dynamisch eingefügt -->
+            </div>
         </div>
 
         <div id="subsContainer" class="subs-container">
@@ -431,7 +474,28 @@
         function updateDisplay() {
             renderTable();
             renderMap();
+            adjustMapScale();
         }
+
+        function adjustMapScale() {
+            const wrapper = document.getElementById('mapWrapper');
+            const map = document.getElementById('mapContainer');
+            const availableWidth = wrapper.offsetWidth;
+            const mapWidth = 1000; // Originalbreite
+
+            if (availableWidth < mapWidth) {
+                const scale = availableWidth / mapWidth;
+                map.style.transform = `scale(${scale})`;
+                // Da wir transform-origin: top left nutzen, müssen wir die Höhe des Wrappers anpassen,
+                // da das skalierte Element immer noch seinen ursprünglichen Platz im Layout beansprucht.
+                wrapper.style.height = (600 * scale) + 'px';
+            } else {
+                map.style.transform = 'none';
+                wrapper.style.height = '600px';
+            }
+        }
+
+        window.addEventListener('resize', adjustMapScale);
 
         function renderMap() {
             const selection = document.getElementById('sheetSelect').value;
@@ -542,6 +606,8 @@
         // Initialisierung
         detectLanguage();
         fetchData();
+        // Sicherstellen, dass die Skalierung nach dem Laden der Daten erfolgt
+        setTimeout(adjustMapScale, 500);
     </script>
 </body>
 </html>
