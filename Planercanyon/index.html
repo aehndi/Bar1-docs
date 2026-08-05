@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Last War Canyon Planer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <div class="topbar">
+      <div>
+        <h1>Last War Canyon Planer</h1>
+        <p>Ein separater Einsatzplaner für Canyonschlachten mit eigener Optik und voller Google Sheets Unterstützung.</p>
+      </div>
+      <div class="toolbar">
+        <label for="sheetSelector">
+          Team
+          <select id="sheetSelector">
+            <option value="teamA">Team A</option>
+            <option value="teamB">Team B</option>
+          </select>
+        </label>
+        <button class="secondary" id="resetButton" type="button">Zurücksetzen</button>
+        <button class="primary" id="exportButton" type="button">Exportieren</button>
+        <button class="secondary" id="importButton" type="button">Importieren</button>
+        <input id="importFile" type="file" accept="application/json" />
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <section class="map-panel">
+        <div class="map-frame">
+          <div class="timeline" id="timeline"></div>
+          <div class="building-map" id="mapContainer"></div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <section class="panel-card">
+          <h2>Sheet Status</h2>
+          <div class="sheet-status" id="sheetStatus">Lade Konfiguration...</div>
+        </section>
+
+        <section class="panel-card">
+          <h2>Zuweisungsübersicht</h2>
+          <div class="assignment-summary" id="assignmentSummary">
+            <p>Keine Spieler zugewiesen. Wähle ein Team und plane deine Einsätze.</p>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <h2>Kurzanleitung</h2>
+          <p>Wähle das gewünschte Team, weise Spieler per Dropdown zu und verschiebe sie per Drag & Drop. Der Plan wird automatisch lokal gespeichert.</p>
+          <small>Trage die Spreadsheet-ID und den API-Key in <code>config.js</code> ein.</small>
+        </section>
+      </aside>
+    </div>
+
+    <div class="footer">© Last War Canyon Planer / Demo. Der bestehende Planer bleibt unverändert.</div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
