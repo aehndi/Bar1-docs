@@ -642,16 +642,12 @@
             
             if (!mapContainer || !subsList || !mapTitle) return;
 
-            // Titel setzen
-            if (selection === 'midi') {
-                const localHour = isSummerTime ? 13 : 12;
-                const serverHour = isSummerTime ? 9 : 8;
-                mapTitle.innerText = `${localHour}:00 ${tz} / ${serverHour}:00 Server`;
-            } else {
-                const localHour = isSummerTime ? 22 : 21;
-                const serverHour = isSummerTime ? 18 : 17;
-                mapTitle.innerText = `${localHour}:00 ${tz} / ${serverHour}:00 Server`;
-            }
+            const localHour = selection === 'midi'
+                ? (isSummerTime ? 13 : 12)
+                : (isSummerTime ? 22 : 21);
+            const serverHour = selection === 'midi' ? 9 : 18;
+
+            mapTitle.innerText = `${localHour}:00 ${tz} / ${serverHour}:00 Server`;
 
             // Container leeren (außer Titel)
             // Wir entfernen alle Kinder außer dem mapTitle
