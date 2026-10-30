@@ -286,7 +286,7 @@
             },
             'UA': {
                 'regular': 'Це звичайна позиція на полі бою. Утримуйте свою позицію та координуйте дії зі своїм партнером.',
-                'sub': 'Наразі ви призначені заступником. Будь ласка, будьте напоготові на випадок, якщо хтось вибуде.'
+                'sub': 'Наразі ви призначені запасним. Будь ласка, будьте напоготові на випадок, якщо хтось вибуде.'
             }
         };
 
@@ -417,8 +417,8 @@
             document.getElementById('modalTitle').innerText = texts.modalTitle;
             
             const tableContainer = document.getElementById('tableContainer');
-            if (tableContainer.innerText.includes('Lade') || tableContainer.innerText.includes('Loading') || tableContainer.innerText.includes('Données') || tableContainer.innerText.includes('Cargando') || tableContainer.innerText.includes('Завантаження') || tableContainer.innerText.includes('Fehler') || tableContainer.innerText.includes('Error') || tableContainer.innerText.includes('Erreur') || tableContainer.innerText.includes('Помилка')) {
-                if (tableContainer.innerText.includes('Fehler') || tableContainer.innerText.includes('Error') || tableContainer.innerText.includes('Erreur') || tableContainer.innerText.includes('Помилка')) {
+            if (tableContainer.innerText.includes('Lade') || tableContainer.innerText.includes('Loading') || tableContainer.innerText.includes('Données') || tableContainer.innerText.includes('Cargando') || tableContainer.innerText.includes('Завантаження')) {
+                if (tableContainer.innerText.includes('Fehler') || tableContainer.innerText.includes('Error') || tableContainer.innerText.includes('Erreur') || tableContainer.innerText.includes('Error') || tableContainer.innerText.includes('Помилка')) {
                     tableContainer.innerText = texts.error;
                 } else {
                     tableContainer.innerText = texts.loading;
@@ -468,14 +468,19 @@
         }
 
         function parseData(csvText) {
-            const lines = csvText.split('\n');
+            const lines = csvText.split(/\r?\n/);
             midiData = [];
             soirData = [];
 
-            for (let i = 2; i < 32; i++) {
-                if (!lines[i]) continue;
-                const columns = parseCsvLine(lines[i]);
-                
+            for (let i = 2; i < lines.length; i += 1) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const columns = parseCsvLine(line);
+                if (columns.length < 7) {
+                    continue;
+                }
+
                 if (columns[0]) {
                     midiData.push({
                         quarter: columns[0] || '',
@@ -632,15 +637,20 @@
             const mapContainer = document.getElementById('mapContainer');
             const subsList = document.getElementById('subsList');
             const mapTitle = document.getElementById('mapTitle');
+            const isSummerTime = isDST(new Date());
             const tz = getTimezoneLabel();
             
             if (!mapContainer || !subsList || !mapTitle) return;
 
             // Titel setzen
             if (selection === 'midi') {
-                mapTitle.innerText = `13:00 ${tz} / 9:00 Server`;
+                const localHour = isSummerTime ? 13 : 12;
+                const serverHour = isSummerTime ? 9 : 8;
+                mapTitle.innerText = `${localHour}:00 ${tz} / ${serverHour}:00 Server`;
             } else {
-                mapTitle.innerText = `22:00 ${tz} / 18:00 Server`;
+                const localHour = isSummerTime ? 22 : 21;
+                const serverHour = isSummerTime ? 18 : 17;
+                mapTitle.innerText = `${localHour}:00 ${tz} / ${serverHour}:00 Server`;
             }
 
             // Container leeren (außer Titel)
